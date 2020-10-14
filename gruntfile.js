@@ -63,6 +63,7 @@ module.exports = function (grunt) {
 
     // Default task(s).
     grunt.registerTask('default', [ 'test', 'strip_code', 'uglify' ]);
+    grunt.registerTask('build', [ 'strip_code', 'uglify' ]);
     grunt.registerTask('test', [ 'connect', 'qunit', 'rsids_pa11y' ]);
 
 };
