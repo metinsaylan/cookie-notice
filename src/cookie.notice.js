@@ -17,7 +17,7 @@
      * @type object
      */
     var defaults = {
-        messageLocales: {
+        i18n: {
             it: 'Utilizziamo i cookie per essere sicuri che tu possa avere la migliore esperienza sul nostro sito. Se continui ad utilizzare questo sito assumiamo che tu ne sia felice.',
             en: 'We use cookies to ensure that you have the best experience on our website. If you continue to use this site we assume that you accept this.',
             de: 'Wir verwenden Cookies um sicherzustellen, dass Sie das beste Erlebnis auf unserer Website haben.',
@@ -25,13 +25,8 @@
             pt: 'Utilizamos cookies para garantir que você tenha a melhor experiência em nosso site. Se você continuar a usar este site, assumimos que você aceita isso.'
         },
 
-        cookieNoticePosition: 'bottom',
-
-        learnMoreLinkEnabled: false,
-
-        learnMoreLinkHref: '/cookie-banner-information.html',
-
-        learnMoreLinkText: {
+        linkHref: '/privacy',
+        linkText: {
             it: 'Saperne di più',
             en: 'Learn more',
             de: 'Mehr erfahren',
@@ -39,23 +34,7 @@
             pt: 'Saber mais'
         },
 
-        buttonLocales: {
-            en: 'OK'
-        },
-
-        expiresIn: 30,
-
-        fontFamily: 'inherit',
-        fontSize: 12,
-
-        buttonBgColor: '#ca5000',
-        buttonTextColor: '#fff',
-        noticeBgColor: '#000',
-        noticeTextColor: '#fff',
-        linkColor: '#009fdd',
-        linkBgColor: '#000',
-        linkTarget: '_blank',
-        debug: false
+        expiresIn: 30
     };
 
     /**
@@ -88,43 +67,29 @@
         }
 
         // 'data-' attribute - data-cookie-notice='{ "key": "value", ... }'
-        var elemCfg = document.querySelector('script[ data-cookie-notice ]');
+        var elemCfg = document.querySelector('div[ data-cookie-notice ]');
         var config;
 
         try {
             config = elemCfg ? JSON.parse(elemCfg.getAttribute('data-cookie-notice')) : {};
-            // TODO apply settings coming from data attribute and keep defaults if not overwritten -> 1.2.x
         } catch (ex) {
-            console.error('data-cookie-notice JSON error:', elemCfg, ex);
             config = {};
         }
 
         // Extend default params
         var params = extendDefaults(defaults, arguments[0] || config || {});
 
-        if (params.debug) {
-            console.warn('cookie-notice:', params);
-        }
-
         // Get current locale for notice text
-        var noticeText = getStringForCurrentLocale(params.messageLocales);
+        var noticeText = getStringForCurrentLocale(params.i18n);
 
         // Create notice
-        var notice = createNotice(noticeText, params.noticeBgColor, params.noticeTextColor, params.fontFamily, params.fontSize, params.cookieNoticePosition);
+        var notice = createNotice(noticeText);
 
-        var learnMoreLink;
-
-        if (params.learnMoreLinkEnabled) {
-            var learnMoreLinkText = getStringForCurrentLocale(params.learnMoreLinkText);
-
-            learnMoreLink = createLearnMoreLink(learnMoreLinkText, params.learnMoreLinkHref, params.linkTarget, params.linkColor, params.linkBgColor);
-        }
-
-        // Get current locale for button text
-        var buttonText = getStringForCurrentLocale(params.buttonLocales);
+        var learnMoreLinkText = getStringForCurrentLocale(params.linkText);
+        var learnMoreLink = createLearnMoreLink(learnMoreLinkText, params.linkHref);
 
         // Create dismiss button
-        var dismissButton = createDismissButton(buttonText, params.buttonBgColor, params.buttonTextColor, params.fontFamily);
+        var dismissButton = createDismissButton(params.buttonBgColor, params.buttonTextColor);
 
         // Dismiss button click event
         dismissButton.addEventListener('click', function (e) {
@@ -136,10 +101,7 @@
         // Append notice to the DOM
         var noticeDomElement = document.body.appendChild(notice);
 
-        if (!!learnMoreLink) {
-            noticeDomElement.appendChild(learnMoreLink);
-        }
-
+        noticeDomElement.appendChild(learnMoreLink);
         noticeDomElement.appendChild(dismissButton);
 
     };
@@ -166,53 +128,25 @@
     /**
      * Create notice
      * @param message
-     * @param bgColor
-     * @param textColor
-     * @param position
-     * @param fontFamily
      * @returns {HTMLElement}
      */
-    function createNotice(message, bgColor, textColor, fontFamily, fontSize, position) {
+    function createNotice(message) {
         var notice = document.createElement('div'),
-            noticeStyle = notice.style,
-            lineHeight = 28,
-            paddingBottomTop = 10,
-            noticeHeight = lineHeight + paddingBottomTop * 2;
-        fontSize = typeof fontSize !== 'undefined' ? fontSize : 12;
+            noticeStyle = notice.style;
 
         notice.innerHTML = message + '&nbsp;';
         notice.setAttribute('id', 'cookieNotice');
-        notice.setAttribute('data-test-section', 'cookie-notice');
-        notice.setAttribute('data-test-transitioning', 'false');
-
 
         noticeStyle.position = 'fixed';
-
-        if (position === 'top') {
-            var bodyDOMElement = document.querySelector('body');
-
-            originPaddingTop = bodyDOMElement.style.paddingTop;
-
-            noticeStyle.top = '0';
-            bodyDOMElement.style.paddingTop = noticeHeight + 'px';
-        } else {
-            noticeStyle.bottom = '0';
-        }
-
+        noticeStyle.bottom = '0';
 
         noticeStyle.left = '0';
         noticeStyle.right = '0';
-        noticeStyle.background = bgColor;
-        noticeStyle.color = textColor;
+        noticeStyle.background = "#000";
+        noticeStyle.color = "#fff";
         noticeStyle["z-index"] = '999';
-        noticeStyle.padding = paddingBottomTop + 'px 5px';
+        noticeStyle.padding = '15px';
         noticeStyle["text-align"] = 'center';
-        noticeStyle["font-size"] = fontSize + 'px';
-        noticeStyle["line-height"] = lineHeight + 'px';
-
-        if (!!fontFamily) {
-            noticeStyle['fontFamily'] = fontFamily;
-        }
 
         return notice;
     }
@@ -224,34 +158,26 @@
      * @param buttonTextColor
      * @returns {HTMLElement}
      */
-    function createDismissButton(message, buttonColor, buttonTextColor, buttonTextFontFamily) {
+    function createDismissButton() {
 
         var dismissButton = document.createElement('span'),
             dismissButtonStyle = dismissButton.style;
 
         // Dismiss button
         dismissButton.href = '#';
-        dismissButton.innerHTML = message;
+        dismissButton.innerHTML = "OK";
 
         dismissButton.setAttribute('role', 'button');
         dismissButton.className = 'confirm';
 
-        dismissButton.setAttribute('data-test-action', 'dismiss-cookie-notice');
-
-
         // Dismiss button style
-        dismissButtonStyle.background = buttonColor;
-        dismissButtonStyle.color = buttonTextColor;
+        dismissButtonStyle.background = "#f90";
+        dismissButtonStyle.color = "#000";
         dismissButtonStyle['text-decoration'] = 'none';
         dismissButtonStyle['cursor'] = 'pointer';
         dismissButtonStyle.display = 'inline-block';
-        dismissButtonStyle.padding = '0 15px';
+        dismissButtonStyle.padding = '4px 15px';
         dismissButtonStyle.margin = '0 0 0 10px';
-
-        if (!!buttonTextFontFamily) {
-            dismissButtonStyle.fontFamily = buttonTextFontFamily;
-
-        }
 
         return dismissButton;
 
@@ -265,7 +191,7 @@
      * @param linkColor
      * @returns {HTMLElement}
      */
-    function createLearnMoreLink(learnMoreLinkText, learnMoreLinkHref, linkTarget, linkColor, linkBgColor) {
+    function createLearnMoreLink(learnMoreLinkText, learnMoreLinkHref) {
 
         var learnMoreLink = document.createElement('a'),
             learnMoreLinkStyle = learnMoreLink.style;
@@ -273,11 +199,11 @@
         learnMoreLink.href = learnMoreLinkHref;
         learnMoreLink.textContent = learnMoreLinkText;
         learnMoreLink.title = learnMoreLinkText;
-        learnMoreLink.target = linkTarget;
+        learnMoreLink.target = "_blank";
         learnMoreLink.className = 'learn-more';
         learnMoreLink.setAttribute('data-test-action', 'learn-more-link');
 
-        learnMoreLinkStyle.color = linkColor;
+        learnMoreLinkStyle.color = "#5cf";
         learnMoreLinkStyle.backgroundColor = 'transparent';
         learnMoreLinkStyle['text-decoration'] = 'underline';
         learnMoreLinkStyle.display = 'inline';
